@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Textarea } from "@/shared/ui"
 import { useCreatePost } from "../api/useCreatePost"
 
@@ -16,6 +17,11 @@ export const PostAddDialog = ({ open, onOpenChange }: PostAddDialogProps) => {
       onSuccess: () => {
         onOpenChange(false)
         setNewPost({ title: "", body: "", userId: 1 })
+        toast.success("게시물이 추가되었습니다")
+      },
+      onError: (error) => {
+        console.error("게시물 추가 실패:", error)
+        toast.error("게시물 추가에 실패했습니다")
       },
     })
   }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -94,14 +94,17 @@ const PostsManagerPage = () => {
   // Mutations
   const deletePost = useDeletePost()
 
-  // 게시물 + 작성자 정보 결합 및 정렬
+  // 게시물 + 작성자 정보 결합 및 정렬 (성능 최적화: Map 사용)
   const postsWithAuthors = useMemo((): PostWithAuthor[] => {
     const rawPosts = searchData?.posts ?? tagPostsData?.posts ?? postsData?.posts ?? []
     const users = usersData?.users ?? []
 
+    // O(n×m) → O(n+m) 복잡도 개선: Map으로 사용자 조회
+    const userMap = new Map(users.map((user) => [user.id, user]))
+
     const postsWithAuthor = rawPosts.map((post) => ({
       ...post,
-      author: users.find((user) => user.id === post.userId),
+      author: userMap.get(post.userId),
     }))
 
     // 정렬 적용
@@ -129,62 +132,71 @@ const PostsManagerPage = () => {
   const total = searchData?.total ?? tagPostsData?.total ?? postsData?.total ?? 0
   const isLoading = isPostsLoading || isTagPostsLoading || isSearchLoading
 
-  // URL 업데이트 및 store 업데이트
-  const updateURL = (
-    updates: {
-      skip?: number
-      limit?: number
-      searchQuery?: string
-      sortBy?: string
-      sortOrder?: string
-      selectedTag?: string
-    } = {},
-  ) => {
-    const params = new URLSearchParams()
-    const newSkip = updates.skip ?? skip
-    const newLimit = updates.limit ?? limit
-    const newSearchQuery = updates.searchQuery ?? searchQuery
-    const newSortBy = updates.sortBy ?? sortBy
-    const newSortOrder = updates.sortOrder ?? sortOrder
-    const newSelectedTag = updates.selectedTag ?? selectedTag
+  // URL 업데이트 및 store 업데이트 (성능 최적화: useCallback)
+  const updateURL = useCallback(
+    (
+      updates: {
+        skip?: number
+        limit?: number
+        searchQuery?: string
+        sortBy?: string
+        sortOrder?: string
+        selectedTag?: string
+      } = {},
+    ) => {
+      const params = new URLSearchParams()
+      const newSkip = updates.skip ?? skip
+      const newLimit = updates.limit ?? limit
+      const newSearchQuery = updates.searchQuery ?? searchQuery
+      const newSortBy = updates.sortBy ?? sortBy
+      const newSortOrder = updates.sortOrder ?? sortOrder
+      const newSelectedTag = updates.selectedTag ?? selectedTag
 
-    if (newSkip) params.set("skip", newSkip.toString())
-    if (newLimit) params.set("limit", newLimit.toString())
-    if (newSearchQuery) params.set("search", newSearchQuery)
-    if (newSortBy) params.set("sortBy", newSortBy)
-    if (newSortOrder) params.set("sortOrder", newSortOrder)
-    if (newSelectedTag) params.set("tag", newSelectedTag)
+      if (newSkip) params.set("skip", newSkip.toString())
+      if (newLimit) params.set("limit", newLimit.toString())
+      if (newSearchQuery) params.set("search", newSearchQuery)
+      if (newSortBy) params.set("sortBy", newSortBy)
+      if (newSortOrder) params.set("sortOrder", newSortOrder)
+      if (newSelectedTag) params.set("tag", newSelectedTag)
 
-    navigate(`?${params.toString()}`)
+      navigate(`?${params.toString()}`)
 
-    // store도 업데이트
-    setFilters({
-      skip: newSkip,
-      limit: newLimit,
-      searchQuery: newSearchQuery,
-      sortBy: newSortBy,
-      sortOrder: newSortOrder,
-      selectedTag: newSelectedTag,
-    })
-  }
+      // store도 업데이트
+      setFilters({
+        skip: newSkip,
+        limit: newLimit,
+        searchQuery: newSearchQuery,
+        sortBy: newSortBy,
+        sortOrder: newSortOrder,
+        selectedTag: newSelectedTag,
+      })
+    },
+    [skip, limit, searchQuery, sortBy, sortOrder, selectedTag, navigate, setFilters],
+  )
 
   // 검색 실행 (Enter 키 또는 검색 버튼 클릭 시)
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (localSearchQuery) {
       updateURL({ searchQuery: localSearchQuery })
       refetchSearch()
     }
-  }
+  }, [localSearchQuery, updateURL, refetchSearch])
 
   // 게시물 삭제
-  const handleDeletePost = (id: number) => {
-    deletePost.mutate(id)
-  }
+  const handleDeletePost = useCallback(
+    (id: number) => {
+      deletePost.mutate(id)
+    },
+    [deletePost],
+  )
 
   // 태그 클릭
-  const handleTagClick = (tag: string) => {
-    updateURL({ selectedTag: tag })
-  }
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      updateURL({ selectedTag: tag })
+    },
+    [updateURL],
+  )
 
   return (
     <Card className="w-full max-w-6xl mx-auto">

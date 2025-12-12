@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from "@/shared/ui"
 import { type Comment } from "@/entities/comment"
 import { useUpdateComment } from "../api/useUpdateComment"
@@ -26,7 +27,14 @@ export const CommentEditDialog = ({ open, onOpenChange, comment, postId }: Comme
     updateComment.mutate(
       { id: comment.id, postId, data: { body: editedBody } },
       {
-        onSuccess: () => onOpenChange(false),
+        onSuccess: () => {
+          onOpenChange(false)
+          toast.success("댓글이 수정되었습니다")
+        },
+        onError: (error) => {
+          console.error("댓글 수정 실패:", error)
+          toast.error("댓글 수정에 실패했습니다")
+        },
       },
     )
   }

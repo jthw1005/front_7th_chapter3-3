@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Textarea } from "@/shared/ui"
 import { type PostWithAuthor } from "@/entities/post"
 import { useUpdatePost } from "../api/useUpdatePost"
@@ -25,7 +26,14 @@ export const PostEditDialog = ({ open, onOpenChange, post }: PostEditDialogProps
     updatePost.mutate(
       { id: post.id, data: editedPost },
       {
-        onSuccess: () => onOpenChange(false),
+        onSuccess: () => {
+          onOpenChange(false)
+          toast.success("게시물이 수정되었습니다")
+        },
+        onError: (error) => {
+          console.error("게시물 수정 실패:", error)
+          toast.error("게시물 수정에 실패했습니다")
+        },
       },
     )
   }

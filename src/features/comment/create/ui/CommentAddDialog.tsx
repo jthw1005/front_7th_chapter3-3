@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from "@/shared/ui"
 import { useCreateComment } from "../api/useCreateComment"
 
@@ -19,6 +20,11 @@ export const CommentAddDialog = ({ open, onOpenChange, postId }: CommentAddDialo
         onSuccess: () => {
           onOpenChange(false)
           setNewComment({ body: "", postId: 0, userId: 1 })
+          toast.success("댓글이 추가되었습니다")
+        },
+        onError: (error) => {
+          console.error("댓글 추가 실패:", error)
+          toast.error("댓글 추가에 실패했습니다")
         },
       },
     )

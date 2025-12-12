@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { commentApi, commentQueries, type CommentsResponse } from "@/entities/comment"
 
 interface LikeCommentParams {
@@ -39,7 +40,10 @@ export const useLikeComment = () => {
     },
 
     // 에러 시 롤백
-    onError: (_err, _variables, context) => {
+    onError: (err, _variables, context) => {
+      console.error("댓글 좋아요 실패:", err)
+      toast.error("좋아요에 실패했습니다")
+
       if (context?.previousComments) {
         queryClient.setQueryData(context.queryKey, context.previousComments)
       }

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { postApi, postQueries, type PostsResponse } from "@/entities/post"
 
 export const useDeletePost = () => {
@@ -32,7 +33,10 @@ export const useDeletePost = () => {
     },
 
     // 에러 시 롤백
-    onError: (_err, _variables, context) => {
+    onError: (err, _variables, context) => {
+      console.error("게시물 삭제 실패:", err)
+      toast.error("게시물 삭제에 실패했습니다")
+
       if (context?.previousQueries) {
         context.previousQueries.forEach((data, queryKey) => {
           queryClient.setQueryData(queryKey, data)
@@ -43,6 +47,10 @@ export const useDeletePost = () => {
     // 성공 시 서버 데이터로 재검증
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: postQueries.all() })
+    },
+
+    onSuccess: () => {
+      toast.success("게시물이 삭제되었습니다")
     },
   })
 }
