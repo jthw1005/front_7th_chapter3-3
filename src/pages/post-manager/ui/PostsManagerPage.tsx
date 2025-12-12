@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Plus, Search } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -33,15 +33,15 @@ import { UserModal } from "@/widgets/user-modal"
 const PostsManagerPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const queryParams = new URLSearchParams(location.search)
 
-  // URL 상태
-  const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
-  const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
-  const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
-  const [sortBy, setSortBy] = useState(queryParams.get("sortBy") || "")
-  const [sortOrder, setSortOrder] = useState(queryParams.get("sortOrder") || "asc")
-  const [selectedTag, setSelectedTag] = useState(queryParams.get("tag") || "")
+  // URL에서 직접 파라미터 읽기
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search])
+  const skip = parseInt(queryParams.get("skip") || "0")
+  const limit = parseInt(queryParams.get("limit") || "10")
+  const searchQuery = queryParams.get("search") || ""
+  const sortBy = queryParams.get("sortBy") || ""
+  const sortOrder = queryParams.get("sortOrder") || "asc"
+  const selectedTag = queryParams.get("tag") || ""
 
   // 다이얼로그 상태
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -131,30 +131,6 @@ const PostsManagerPage = () => {
     navigate(`?${params.toString()}`)
   }
 
-  // URL에서 초기값 읽기 (컴포넌트 마운트 시에만)
-  const syncStateFromURL = () => {
-    const params = new URLSearchParams(location.search)
-    const urlSkip = parseInt(params.get("skip") || "0")
-    const urlLimit = parseInt(params.get("limit") || "10")
-    const urlSearchQuery = params.get("search") || ""
-    const urlSortBy = params.get("sortBy") || ""
-    const urlSortOrder = params.get("sortOrder") || "asc"
-    const urlSelectedTag = params.get("tag") || ""
-
-    if (urlSkip !== skip) setSkip(urlSkip)
-    if (urlLimit !== limit) setLimit(urlLimit)
-    if (urlSearchQuery !== searchQuery) setSearchQuery(urlSearchQuery)
-    if (urlSortBy !== sortBy) setSortBy(urlSortBy)
-    if (urlSortOrder !== sortOrder) setSortOrder(urlSortOrder)
-    if (urlSelectedTag !== selectedTag) setSelectedTag(urlSelectedTag)
-  }
-
-  // 브라우저 뒤로가기/앞으로가기 시 URL 동기화
-  useEffect(() => {
-    syncStateFromURL()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search])
-
   // 검색 실행
   const handleSearch = () => {
     if (searchQuery) {
@@ -211,7 +187,6 @@ const PostsManagerPage = () => {
 
   // 태그 클릭
   const handleTagClick = (tag: string) => {
-    setSelectedTag(tag)
     updateURL({ selectedTag: tag })
   }
 
@@ -268,17 +243,14 @@ const PostsManagerPage = () => {
                   placeholder="게시물 검색..."
                   className="pl-8"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => updateURL({ searchQuery: e.target.value })}
                   onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                 />
               </div>
             </div>
             <Select
               value={selectedTag}
-              onValueChange={(value) => {
-                setSelectedTag(value)
-                updateURL({ selectedTag: value })
-              }}
+              onValueChange={(value) => updateURL({ selectedTag: value })}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="태그 선택" />
@@ -294,10 +266,7 @@ const PostsManagerPage = () => {
             </Select>
             <Select
               value={sortBy}
-              onValueChange={(value) => {
-                setSortBy(value)
-                updateURL({ sortBy: value })
-              }}
+              onValueChange={(value) => updateURL({ sortBy: value })}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="정렬 기준" />
@@ -311,10 +280,7 @@ const PostsManagerPage = () => {
             </Select>
             <Select
               value={sortOrder}
-              onValueChange={(value) => {
-                setSortOrder(value)
-                updateURL({ sortOrder: value })
-              }}
+              onValueChange={(value) => updateURL({ sortOrder: value })}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="정렬 순서" />
@@ -348,11 +314,7 @@ const PostsManagerPage = () => {
               <span>표시</span>
               <Select
                 value={limit.toString()}
-                onValueChange={(value) => {
-                  const newLimit = Number(value)
-                  setLimit(newLimit)
-                  updateURL({ limit: newLimit })
-                }}
+                onValueChange={(value) => updateURL({ limit: Number(value) })}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="10" />
@@ -368,21 +330,13 @@ const PostsManagerPage = () => {
             <div className="flex gap-2">
               <Button
                 disabled={skip === 0}
-                onClick={() => {
-                  const newSkip = Math.max(0, skip - limit)
-                  setSkip(newSkip)
-                  updateURL({ skip: newSkip })
-                }}
+                onClick={() => updateURL({ skip: Math.max(0, skip - limit) })}
               >
                 이전
               </Button>
               <Button
                 disabled={skip + limit >= total}
-                onClick={() => {
-                  const newSkip = skip + limit
-                  setSkip(newSkip)
-                  updateURL({ skip: newSkip })
-                }}
+                onClick={() => updateURL({ skip: skip + limit })}
               >
                 다음
               </Button>
