@@ -481,6 +481,7 @@ const PostsManager = () => {
           </Button>
         </CardTitle>
       </CardHeader>
+
       <CardContent>
         <div className="flex flex-col gap-4">
           {/* 검색 및 필터 컨트롤 */}
