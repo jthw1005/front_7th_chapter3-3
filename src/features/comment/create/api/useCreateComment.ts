@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { commentApi, commentQueries, type CreateCommentDto } from "@/entities/comment"
 
 export const useCreateComment = () => {
@@ -6,8 +7,9 @@ export const useCreateComment = () => {
 
   return useMutation({
     mutationFn: (data: CreateCommentDto) => commentApi.createComment(data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [...commentQueries.all(), "post", variables.postId] })
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: [...commentQueries.all(), "post", variables.postId] })
+      toast.info("쿼리 무효화 후 리페칭")
     },
   })
 }

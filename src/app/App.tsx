@@ -17,7 +17,7 @@ const App = () => {
             </main>
             <Footer />
           </div>
-          <Toaster position="top-right" richColors />
+          <Toaster position="top-right" richColors expand visibleToasts={5} />
         </Router>
       </QueryProvider>
     </ErrorBoundary>

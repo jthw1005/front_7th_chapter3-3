@@ -50,8 +50,9 @@ export const useLikeComment = () => {
     },
 
     // 성공 시 서버 데이터로 재검증
-    onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({ queryKey: [...commentQueries.all(), "post", variables.postId] })
+    onSettled: async (_data, _error, variables) => {
+      await queryClient.invalidateQueries({ queryKey: [...commentQueries.all(), "post", variables.postId] })
+      toast.info("쿼리 무효화 후 리페칭")
     },
   })
 }

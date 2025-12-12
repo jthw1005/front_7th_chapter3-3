@@ -45,8 +45,9 @@ export const useDeletePost = () => {
     },
 
     // 성공 시 서버 데이터로 재검증
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: postQueries.all() })
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: postQueries.all() })
+      toast.info("쿼리 무효화 후 리페칭")
     },
 
     onSuccess: () => {

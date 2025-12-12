@@ -46,8 +46,9 @@ export const useDeleteComment = () => {
     },
 
     // 성공 시 서버 데이터로 재검증
-    onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({ queryKey: [...commentQueries.all(), "post", variables.postId] })
+    onSettled: async (_, __, variables) => {
+      await queryClient.invalidateQueries({ queryKey: [...commentQueries.all(), "post", variables.postId] })
+      toast.info("쿼리 무효화 후 리페칭")
     },
 
     onSuccess: () => {
