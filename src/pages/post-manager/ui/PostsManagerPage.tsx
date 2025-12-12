@@ -87,16 +87,37 @@ const PostsManagerPage = () => {
   // Mutations
   const deletePost = useDeletePost()
 
-  // 게시물 + 작성자 정보 결합
+  // 게시물 + 작성자 정보 결합 및 정렬
   const postsWithAuthors = useMemo((): PostWithAuthor[] => {
     const rawPosts = searchData?.posts ?? tagPostsData?.posts ?? postsData?.posts ?? []
     const users = usersData?.users ?? []
 
-    return rawPosts.map((post) => ({
+    const postsWithAuthor = rawPosts.map((post) => ({
       ...post,
       author: users.find((user) => user.id === post.userId),
     }))
-  }, [postsData, tagPostsData, searchData, usersData])
+
+    // 정렬 적용
+    return postsWithAuthor.sort((a, b) => {
+      let compareValue = 0
+
+      switch (sortBy) {
+        case "id":
+          compareValue = a.id - b.id
+          break
+        case "title":
+          compareValue = a.title.localeCompare(b.title)
+          break
+        case "reactions":
+          compareValue = a.reactions.likes - b.reactions.likes
+          break
+        default:
+          compareValue = 0
+      }
+
+      return sortOrder === "asc" ? compareValue : -compareValue
+    })
+  }, [postsData, tagPostsData, searchData, usersData, sortBy, sortOrder])
 
   const total = searchData?.total ?? tagPostsData?.total ?? postsData?.total ?? 0
   const isLoading = isPostsLoading || isTagPostsLoading || isSearchLoading
@@ -216,12 +237,12 @@ const PostsManagerPage = () => {
       </CardContent>
 
       {/* 게시물 추가 대화상자 */}
-      <PostAddDialog open={showAddPostDialog} onOpenChange={closeAddPostDialog} />
+      <PostAddDialog open={showAddPostDialog} onOpenChange={(open) => !open && closeAddPostDialog()} />
 
       {/* 게시물 수정 대화상자 */}
       <PostEditDialog
         open={showEditPostDialog}
-        onOpenChange={closeEditPostDialog}
+        onOpenChange={(open) => !open && closeEditPostDialog()}
         post={selectedPost}
         onPostChange={setSelectedPost}
       />
@@ -229,14 +250,14 @@ const PostsManagerPage = () => {
       {/* 댓글 추가 대화상자 */}
       <CommentAddDialog
         open={showAddCommentDialog}
-        onOpenChange={closeAddCommentDialog}
+        onOpenChange={(open) => !open && closeAddCommentDialog()}
         postId={commentPostId}
       />
 
       {/* 댓글 수정 대화상자 */}
       <CommentEditDialog
         open={showEditCommentDialog}
-        onOpenChange={closeEditCommentDialog}
+        onOpenChange={(open) => !open && closeEditCommentDialog()}
         comment={selectedComment}
         postId={selectedPost?.id || 0}
         onCommentChange={setSelectedComment}
@@ -246,14 +267,14 @@ const PostsManagerPage = () => {
       <PostDetailDialog
         post={selectedPost}
         open={showPostDetailDialog}
-        onOpenChange={closePostDetailDialog}
+        onOpenChange={(open) => !open && closePostDetailDialog()}
         searchQuery={searchQuery}
         onAddComment={openAddCommentDialog}
         onEditComment={(comment) => openEditCommentDialog(comment, selectedPost?.id || 0)}
       />
 
       {/* 사용자 모달 */}
-      <UserModal userId={selectedUserId} open={showUserModal} onOpenChange={closeUserModal} />
+      <UserModal userId={selectedUserId} open={showUserModal} onOpenChange={(open) => !open && closeUserModal()} />
     </Card>
   )
 }
