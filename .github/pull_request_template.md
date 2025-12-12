@@ -12,17 +12,33 @@
 - 어디에 무엇을 넣어야 하는가?
 
 #### 체크포인트
-- [ ] 전역상태관리를 사용해서 상태를 분리하고 관리했나요?
-- [ ] Props Drilling을 최소화했나요?
-- [ ] shared 공통 컴포넌트를 분리했나요?
-- [ ] shared 공통 로직을 분리했나요?
-- [ ] entities를 중심으로 type을 정의하고 model을 분리했나요?
-- [ ] entities를 중심으로 ui를 분리했나요?
-- [ ] entities를 중심으로 api를 분리했나요?
-- [ ] feature를 중심으로 사용자행동(이벤트 처리)를 분리했나요?
-- [ ] feature를 중심으로 ui를 분리했나요?
-- [ ] feature를 중심으로 api를 분리했나요?
-- [ ] widget을 중심으로 데이터를 재사용가능한 형태로 분리했나요?
+- [x] 전역상태관리를 사용해서 상태를 분리하고 관리했나요?
+  - Zustand를 사용하여 다이얼로그 상태(useDialogStore)와 필터 상태(usePostFilterStore) 관리
+- [x] Props Drilling을 최소화했나요?
+  - Zustand store를 통해 깊은 계층의 props 전달 제거
+  - 다이얼로그 열기/닫기 액션을 직접 호출
+- [x] shared 공통 컴포넌트를 분리했나요?
+  - Button, Input, Card, Dialog, Select, Textarea, Table, Pagination 등 공통 UI 컴포넌트 분리 (shared/ui/)
+- [x] shared 공통 로직을 분리했나요?
+  - highlightText 유틸리티 함수 (shared/lib/)
+  - baseApi 공통 API 설정 (shared/api/)
+  - Zustand stores (shared/model/)
+- [x] entities를 중심으로 type을 정의하고 model을 분리했나요?
+  - Post, Comment, Tag, User 타입 정의 (entities/*/model/types.ts)
+- [x] entities를 중심으로 ui를 분리했나요?
+  - 현재 entities는 데이터 중심이므로 UI 없음 (FSD 원칙에 부합)
+- [x] entities를 중심으로 api를 분리했나요?
+  - postApi, commentApi, tagApi, userApi 및 각 queries 파일 분리 (entities/*/api/)
+- [x] feature를 중심으로 사용자행동(이벤트 처리)를 분리했나요?
+  - post: create, update, delete, search, filter
+  - comment: create, update, delete, like
+- [x] feature를 중심으로 ui를 분리했나요?
+  - PostAddDialog, PostEditDialog, CommentAddDialog, CommentEditDialog, SearchBar, FilterControls
+- [x] feature를 중심으로 api를 분리했나요?
+  - useCreatePost, useUpdatePost, useDeletePost
+  - useCreateComment, useUpdateComment, useDeleteComment, useLikeComment
+- [x] widget을 중심으로 데이터를 재사용가능한 형태로 분리했나요?
+  - PostTable, PostDetailDialog, UserModal, Header, Footer 위젯 분리
 
 
 ### 심화과제
@@ -35,20 +51,49 @@
 
 #### 체크포인트
 
-- [ ] 모든 API 호출이 TanStack Query의 useQuery와 useMutation으로 대체되었는가?
-- [ ] 쿼리 키가 적절히 설정되었는가?
-- [ ] fetch와 useState가 아닌 선언적인 함수형 프로그래밍이 적절히 적용되었는가?
-- [ ] 캐싱과 리프레시 전략이 올바르게 구현되었는가?
-- [ ] 낙관적인 업데이트가 적용되었는가?
-- [ ] 에러 핸들링이 적절히 구현되었는가?
-- [ ] 서버 상태와 클라이언트 상태가 명확히 분리되었는가?
-- [ ] 코드가 간결하고 유지보수가 용이한 구조로 작성되었는가?
-- [ ] TanStack Query의 Devtools가 정상적으로 작동하는가?
+- [x] 모든 API 호출이 TanStack Query의 useQuery와 useMutation으로 대체되었는가?
+  - baseApi 계층에서만 fetch 사용, 모든 컴포넌트에서 useQuery/useMutation 사용
+  - entities/*/api/에 각 엔티티별 API 함수 및 쿼리 정의
+- [x] 쿼리 키가 적절히 설정되었는가?
+  - postQueries, commentQueries, userQueries, tagQueries 쿼리 키 팩토리 구현
+  - 계층적 구조로 부분 무효화 가능 (예: ["posts", "list"], ["posts", "tag", tag])
+- [x] fetch와 useState가 아닌 선언적인 함수형 프로그래밍이 적절히 적용되었는가?
+  - 명령형 fetch + useState 패턴 완전 제거
+  - useQuery의 data, isLoading, useMutation의 mutate 사용
+- [x] 캐싱과 리프레시 전략이 올바르게 구현되었는가?
+  - QueryProvider에서 staleTime: 1분, retry: 1 설정
+  - 엔티티별 차등 캐싱 (User: 5분, Tag: 10분, Post/Comment: 1분)
+  - enabled 옵션으로 불필요한 요청 방지
+- [x] 낙관적인 업데이트가 적용되었는가?
+  - useDeletePost, useDeleteComment, useLikeComment에 onMutate 구현
+  - 에러 시 onError에서 이전 상태로 롤백
+  - onSettled에서 서버 데이터로 재검증
+- [x] 에러 핸들링이 적절히 구현되었는가?
+  - Mutation의 onError에서 캐시 롤백 처리
+  - isPending 상태로 버튼 비활성화
+  - (개선 필요: UI 레벨 에러 메시지 표시 부재)
+- [x] 서버 상태와 클라이언트 상태가 명확히 분리되었는가?
+  - TanStack Query: Posts, Comments, Users, Tags (서버 상태)
+  - Zustand: Dialog 상태, Filter/Pagination 상태 (클라이언트 상태)
+- [x] 코드가 간결하고 유지보수가 용이한 구조로 작성되었는가?
+  - 각 feature별로 mutation hook 분리
+  - Entity별로 API, queries 분리
+  - FSD 구조로 관심사 명확히 분리
+- [x] TanStack Query의 Devtools가 정상적으로 작동하는가?
+  - QueryProvider.tsx에 ReactQueryDevtools 추가
+  - initialIsOpen={false}로 설정하여 필요시 열람 가능
 
 
 ### 최종과제
-- [ ] 폴더구조와 나의 멘탈모데일이 일치하나요?
-- [ ] 다른 사람이 봐도 이해하기 쉬운 구조인가요?
+- [x] 폴더구조와 나의 멘탈모데일이 일치하나요?
+  - FSD 계층 구조를 따라 명확히 분리됨
+  - app (providers) → pages → widgets → features → entities → shared 순서로 의존성 관리
+  - 각 계층의 역할이 명확: entities(데이터), features(사용자 행동), widgets(조합), pages(통합)
+- [x] 다른 사람이 봐도 이해하기 쉬운 구조인가요?
+  - 각 폴더 이름이 기능/역할을 명확히 표현 (post/create, comment/like)
+  - index.ts를 통한 public API로 import 경로 단순화
+  - ui, api, model 세그먼트로 관심사 분리
+  - 일관된 네이밍 규칙 (useCreatePost, PostAddDialog)
 
 ## 과제 셀프회고
 

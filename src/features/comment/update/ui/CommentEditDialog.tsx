@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from "@/shared/ui"
 import { type Comment } from "@/entities/comment"
 import { useUpdateComment } from "../api/useUpdateComment"
@@ -7,22 +8,23 @@ interface CommentEditDialogProps {
   onOpenChange: (open: boolean) => void
   comment: Comment | null
   postId: number
-  onCommentChange: (comment: Comment | null) => void
 }
 
-export const CommentEditDialog = ({
-  open,
-  onOpenChange,
-  comment,
-  postId,
-  onCommentChange,
-}: CommentEditDialogProps) => {
+export const CommentEditDialog = ({ open, onOpenChange, comment, postId }: CommentEditDialogProps) => {
+  const [editedBody, setEditedBody] = useState("")
   const updateComment = useUpdateComment()
+
+  // Dialog가 열릴 때 comment 데이터로 초기화
+  useEffect(() => {
+    if (open && comment) {
+      setEditedBody(comment.body)
+    }
+  }, [open, comment])
 
   const handleUpdateComment = () => {
     if (!comment) return
     updateComment.mutate(
-      { id: comment.id, postId, data: { body: comment.body } },
+      { id: comment.id, postId, data: { body: editedBody } },
       {
         onSuccess: () => onOpenChange(false),
       },
@@ -38,8 +40,8 @@ export const CommentEditDialog = ({
         <div className="space-y-4">
           <Textarea
             placeholder="댓글 내용"
-            value={comment?.body || ""}
-            onChange={(e) => onCommentChange(comment ? { ...comment, body: e.target.value } : null)}
+            value={editedBody}
+            onChange={(e) => setEditedBody(e.target.value)}
           />
           <Button onClick={handleUpdateComment} disabled={updateComment.isPending}>
             {updateComment.isPending ? "업데이트 중..." : "댓글 업데이트"}

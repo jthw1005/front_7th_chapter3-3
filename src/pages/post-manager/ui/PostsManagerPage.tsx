@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -47,12 +47,15 @@ const PostsManagerPage = () => {
     closeEditCommentDialog,
     openUserModal,
     closeUserModal,
-    setSelectedPost,
-    setSelectedComment,
   } = useDialogStore()
 
-  const { skip, limit, searchQuery, sortBy, sortOrder, selectedTag, setFilters, initFromURL } =
-    usePostFilterStore()
+  const { skip, limit, searchQuery, sortBy, sortOrder, selectedTag, setFilters, initFromURL } = usePostFilterStore()
+
+  // 로컬 검색 입력 상태 (성능 최적화 - URL에서 파생)
+  const [localSearchQuery, setLocalSearchQuery] = useState(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get("search") || ""
+  })
 
   // URL과 store 동기화
   useEffect(() => {
@@ -73,7 +76,11 @@ const PostsManagerPage = () => {
   })
 
   // TanStack Query - 검색
-  const { data: searchData, isLoading: isSearchLoading, refetch: refetchSearch } = useQuery({
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    refetch: refetchSearch,
+  } = useQuery({
     ...postQueries.search(searchQuery),
     enabled: false, // 수동으로 트리거
   })
@@ -123,14 +130,16 @@ const PostsManagerPage = () => {
   const isLoading = isPostsLoading || isTagPostsLoading || isSearchLoading
 
   // URL 업데이트 및 store 업데이트
-  const updateURL = (updates: {
-    skip?: number
-    limit?: number
-    searchQuery?: string
-    sortBy?: string
-    sortOrder?: string
-    selectedTag?: string
-  } = {}) => {
+  const updateURL = (
+    updates: {
+      skip?: number
+      limit?: number
+      searchQuery?: string
+      sortBy?: string
+      sortOrder?: string
+      selectedTag?: string
+    } = {},
+  ) => {
     const params = new URLSearchParams()
     const newSkip = updates.skip ?? skip
     const newLimit = updates.limit ?? limit
@@ -159,9 +168,10 @@ const PostsManagerPage = () => {
     })
   }
 
-  // 검색 실행
+  // 검색 실행 (Enter 키 또는 검색 버튼 클릭 시)
   const handleSearch = () => {
-    if (searchQuery) {
+    if (localSearchQuery) {
+      updateURL({ searchQuery: localSearchQuery })
       refetchSearch()
     }
   }
@@ -175,7 +185,6 @@ const PostsManagerPage = () => {
   const handleTagClick = (tag: string) => {
     updateURL({ selectedTag: tag })
   }
-
 
   return (
     <Card className="w-full max-w-6xl mx-auto">
@@ -193,11 +202,7 @@ const PostsManagerPage = () => {
         <div className="flex flex-col gap-4">
           {/* 검색 및 필터 컨트롤 */}
           <div className="flex gap-4">
-            <SearchBar
-              value={searchQuery}
-              onChange={(value) => updateURL({ searchQuery: value })}
-              onSearch={handleSearch}
-            />
+            <SearchBar value={localSearchQuery} onChange={setLocalSearchQuery} onSearch={handleSearch} />
             <FilterControls
               selectedTag={selectedTag}
               sortBy={sortBy}
@@ -244,7 +249,6 @@ const PostsManagerPage = () => {
         open={showEditPostDialog}
         onOpenChange={(open) => !open && closeEditPostDialog()}
         post={selectedPost}
-        onPostChange={setSelectedPost}
       />
 
       {/* 댓글 추가 대화상자 */}
@@ -260,7 +264,6 @@ const PostsManagerPage = () => {
         onOpenChange={(open) => !open && closeEditCommentDialog()}
         comment={selectedComment}
         postId={selectedPost?.id || 0}
-        onCommentChange={setSelectedComment}
       />
 
       {/* 게시물 상세 보기 대화상자 */}
