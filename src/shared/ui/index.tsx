@@ -13,3 +13,4 @@ export {
   DialogTitle,
 } from "@/shared/ui/Dialog"
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/shared/ui/Table"
+export { Pagination } from "@/shared/ui/Pagination"
