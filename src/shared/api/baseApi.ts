@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.NODE_ENV === "production" ? "https://dummyjson.com" : "/api"
+const BASE_URL = import.meta.env.PROD ? "https://dummyjson.com" : "/api"
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string | number>
